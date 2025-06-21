@@ -14,6 +14,7 @@ from config import DB_CONFIG
 
 # Initialize the Dash app
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server # Expose the server variable for Gunicorn
 
 def load_latest_data():
     """Load the most recent data from database"""
