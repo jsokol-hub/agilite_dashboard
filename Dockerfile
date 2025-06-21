@@ -1,22 +1,39 @@
-# 1. Use an official Python runtime as a parent image
-FROM python:3.9-slim
+# Этап 1: "Строитель" (Builder) - Установка зависимостей
+# Используем конкретную версию Python для предсказуемости
+FROM python:3.11.9-slim as builder
 
-# 2. Set the working directory in the container
+# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# 3. Copy the requirements file into the container
+# Копируем только файл с зависимостями, чтобы использовать кэш Docker
 COPY requirements.txt .
 
-# 4. Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Устанавливаем зависимости в локальную директорию пользователя, а не глобально
+# Это безопаснее и является хорошей практикой
+RUN pip install --user --no-cache-dir -r requirements.txt
 
-# 5. Copy the rest of the application's code into the container
+# ---
+
+# Этап 2: Финальный образ
+# Начинаем с такого же чистого образа Python
+FROM python:3.11.9-slim
+
+# Устанавливаем рабочую директорию
+WORKDIR /app
+
+# Копируем зависимости, установленные на этапе "строителя"
+COPY --from=builder /root/.local /root/.local
+
+# Копируем весь код нашего приложения
 COPY . .
 
-# 6. Expose the port the app runs on
+# Добавляем директорию с исполняемыми файлами пакетов (включая gunicorn) в системный PATH
+# Это обязательно, так как мы использовали --user при установке
+ENV PATH=/root/.local/bin:$PATH
+
+# Открываем порт 80, который будет слушать Gunicorn. CapRover ожидает этого.
 EXPOSE 80
 
-# 7. Define the command to run the app using Gunicorn
-# Gunicorn is a production-ready WSGI server.
-# It will look for the 'server' object inside the 'app.py' file.
+# Запускаем приложение с помощью Gunicorn
+# Это производственный стандарт для запуска веб-приложений на Python
 CMD ["gunicorn", "--bind", "0.0.0.0:80", "app:server"] 
