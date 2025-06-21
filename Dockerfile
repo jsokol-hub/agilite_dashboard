@@ -1,39 +1,33 @@
-# Этап 1: "Строитель" (Builder) - Установка зависимостей
-# Используем конкретную версию Python для предсказуемости
-FROM python:3.11.9-slim as builder
+# Stage 1: Build the application with all dependencies
+FROM python:3.9-slim as builder
 
-# Устанавливаем рабочую директорию
+# Set the working directory
 WORKDIR /app
 
-# Копируем только файл с зависимостями, чтобы использовать кэш Docker
+# Install system dependencies required for building Python packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the requirements file and install dependencies
+# This is done in a separate step to leverage Docker's layer caching.
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Устанавливаем зависимости в локальную директорию пользователя, а не глобально
-# Это безопаснее и является хорошей практикой
-RUN pip install --user --no-cache-dir -r requirements.txt
+# Stage 2: Create the final, lean production image
+FROM python:3.9-slim
 
-# ---
-
-# Этап 2: Финальный образ
-# Начинаем с такого же чистого образа Python
-FROM python:3.11.9-slim
-
-# Устанавливаем рабочую директорию
+# Set the working directory
 WORKDIR /app
 
-# Копируем зависимости, установленные на этапе "строителя"
-COPY --from=builder /root/.local /root/.local
+# Copy the installed packages from the builder stage
+COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
 
-# Копируем весь код нашего приложения
+# Copy the application code
 COPY . .
 
-# Добавляем директорию с исполняемыми файлами пакетов (включая gunicorn) в системный PATH
-# Это обязательно, так как мы использовали --user при установке
-ENV PATH=/root/.local/bin:$PATH
+# Expose the port the app runs on
+EXPOSE 8050
 
-# Открываем порт 80, который будет слушать Gunicorn. CapRover ожидает этого.
-EXPOSE 80
-
-# Запускаем приложение с помощью Gunicorn
-# Это производственный стандарт для запуска веб-приложений на Python
-CMD ["gunicorn", "--bind", "0.0.0.0:80", "app:server"] 
+# The command to run the application using Gunicorn
+CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:8050", "app:server"] 

@@ -5,6 +5,40 @@ Test script for database connection to the scraper's database.
 import sys
 from database import db_manager
 from config import DB_CONFIG, PRODUCTS_TABLE
+import psycopg2
+
+def test_db_connection():
+    """
+    Tests the connection to the PostgreSQL database using the credentials
+    from the config module.
+    """
+    try:
+        print("Attempting to connect to the database...")
+        conn = psycopg2.connect(
+            dbname=DB_CONFIG['dbname'],
+            user=DB_CONFIG['user'],
+            password=DB_CONFIG['password'],
+            host=DB_CONFIG['host'],
+            port=DB_CONFIG['port']
+        )
+        print("Database connection successful!")
+        
+        # Check if the 'agilite' schema exists
+        cur = conn.cursor()
+        cur.execute("SELECT schema_name FROM information_schema.schemata WHERE schema_name = 'agilite';")
+        if cur.fetchone():
+            print("Schema 'agilite' found.")
+        else:
+            print("Warning: Schema 'agilite' not found.")
+            
+        cur.close()
+        conn.close()
+        
+    except psycopg2.OperationalError as e:
+        print(f"Connection failed: {e}")
+        print("\nPlease check your .env file and ensure the database is running and accessible.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
 
 def test_connection():
     """Test database connection and check for necessary tables."""
