@@ -4,14 +4,18 @@ An interactive dashboard for analyzing Agilite sales, connected to a PostgreSQL/
 
 ## Features
 
-- 📊 Visualization of product distribution by category
-- 📈 Analysis of stock level dynamics across scraping sessions
-- 💰 Price distribution analysis
-- 🏷️ Product stock status overview
-- 🔗 Table of top products with direct links
-- 🗄️ Integration with PostgreSQL/PostGIS
-- ⏰ Automatic data refresh every 5 minutes
-- 🚀 Ready for deployment on CapRover
+- 📊 **KPI Cards:** At-a-glance metrics for Total Items In Stock, Overall Stock-Out Rate, and Tracked Categories.
+- 🧠 **Adaptive Insights:**
+    - Shows **High-Demand Products** (likely top-sellers) based on historical stock changes.
+    - If history is insufficient, it automatically shows **Immediate Attention: Out of Stock** items.
+- 📈 **Trend Analysis:**
+    - Visualizes stock level and category trends over time.
+    - Adapts to show a clear KPI for a single data point, preventing "empty" charts.
+- ⚠️ **Attention Areas:** A dedicated chart for **Stock-Out Rate by Category** to identify problematic product groups.
+- 💰 **Price Distribution Analysis:** A histogram showing the distribution of product prices.
+- 🗄️ **Database Integration:** Connects to a PostgreSQL/PostGIS database.
+- ⏰ **Auto-Refresh:** Automatically updates data every 5 minutes.
+- 🚀 **Deployment-Ready:** Fully configured for one-click deployment on CapRover.
 
 ## Requirements
 

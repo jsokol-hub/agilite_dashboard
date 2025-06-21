@@ -83,5 +83,29 @@ class DatabaseManager:
             logger.error(f"Error loading latest scraping session: {e}")
             return {}
 
+    def get_product_changelog(self):
+        """
+        Retrieves the complete history of all products to identify changes
+        in stock status over time. This is used to calculate demand.
+        """
+        try:
+            # Using title as the identifier. A stable product_id would be ideal.
+            query = f"""
+            SELECT 
+                title, 
+                url,
+                category,
+                stock_status, 
+                processing_timestamp 
+            FROM {PRODUCTS_TABLE}
+            ORDER BY title, processing_timestamp;
+            """
+            df = pd.read_sql(query, self.engine)
+            logger.info(f"Fetched {len(df)} records for product changelog analysis.")
+            return df
+        except Exception as e:
+            logger.error(f"Error in get_product_changelog: {e}")
+            return pd.DataFrame()
+
 # Global database manager instance
 db_manager = DatabaseManager() 
