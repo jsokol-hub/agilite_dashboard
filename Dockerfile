@@ -1,33 +1,37 @@
-# Stage 1: Build the application with all dependencies
+# Stage 1: "Builder" - for installing dependencies
+# Use a specific Python version for predictability
 FROM python:3.11-slim as builder
 
 # Set the working directory
 WORKDIR /app
 
-# Install system dependencies required for building Python packages
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy the requirements file and install dependencies
-# This is done in a separate step to leverage Docker's layer caching.
+# Copy only the requirements file to leverage Docker's layer caching
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Stage 2: Create the final, lean production image
+# Install dependencies to the user's local directory, which is a safer practice
+RUN pip install --user --no-cache-dir -r requirements.txt
+
+# ---
+
+# Stage 2: Final production image
+# Start from the same clean Python image
 FROM python:3.11-slim
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the installed packages from the builder stage
-COPY --from=builder /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages
+# Copy the dependencies installed in the "builder" stage
+COPY --from=builder /root/.local /root/.local
 
-# Copy the application code
+# Copy all the application code
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 8050
+# Add the directory with package executables (including gunicorn) to the system PATH
+# This is necessary because we used the --user flag during installation
+ENV PATH=/root/.local/bin:$PATH
 
-# The command to run the application using Gunicorn
-CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:8050", "app:server"] 
+# Expose port 80, which Gunicorn will listen on. CapRover expects this.
+EXPOSE 80
+
+# Run the application using Gunicorn, the production standard for Python web apps
+CMD ["gunicorn", "--workers", "4", "--bind", "0.0.0.0:80", "app:server"] 
