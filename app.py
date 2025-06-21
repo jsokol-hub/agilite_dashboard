@@ -344,15 +344,14 @@ def create_scraping_status_card(latest_session):
         if start_time_utc:
             # Convert to pandas Timestamp
             ts = pd.to_datetime(start_time_utc)
-            # If the timestamp from the DB is naive (no timezone), 
+            # If the timestamp from the DB is naive (no timezone),
             # assume it's UTC and make it timezone-aware.
             if ts.tzinfo is None:
                 ts = ts.tz_localize('UTC')
             
-            # Now it's safe to convert to the server's local timezone for display.
-            # tz_convert(None) converts to local and removes tzinfo for clean formatting.
-            start_time_local = ts.tz_convert(None)
-            start_time_str = start_time_local.strftime('%Y-%m-%d %H:%M:%S')
+            # Convert to Israel Standard Time for display
+            start_time_israel = ts.tz_convert('Asia/Jerusalem')
+            start_time_str = start_time_israel.strftime('%Y-%m-%d %H:%M:%S')
         else:
             start_time_str = "N/A"
             
